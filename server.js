@@ -1,21 +1,27 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const mongoose = require('mongoose');
+const port = process.env.PORT || 5000;
 
 const routes = require('./api/routes/routes');
 
 const server = express();
 const corsOptions = {
-  // If you're moving onto the stretch problem you'll need to set this obj with the appropriate fields
-  // ensure that your client's URL/Port can achieve a Handshake
-  // then pass this object to the cors() function
+  'origin': 'http://localhost:3000',
+  'credentials': true
 };
 
+mongoose.Promise = global.Promise;
+mongoose.connect('mongodb://localhost/auth-users', {
+  useMongoClient: true
+});
+
 server.use(bodyParser.json());
-server.use(cors());
+server.use(cors(corsOptions));
 
 routes(server);
 
-module.exports = {
-  server
-};
+server.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});

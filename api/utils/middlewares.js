@@ -22,20 +22,45 @@ const authenticate = (req, res, next) => {
 
 const encryptUserPW = (req, res, next) => {
   const { username, password } = req.body;
-  // https://github.com/kelektiv/node.bcrypt.js#usage
-  // TODO: Fill this middleware in with the Proper password encrypting, bcrypt.hash()
-  // Once the password is encrypted using bcrypt, you'll need to save the user the DB.
-  // Once the user is set, take the savedUser and set the returned document from Mongo on req.user
-  // call next to head back into the route handler for encryptUserPW
+  if (!password) {
+    throw new Error();
+    return;
+  }
+  bcrypt  
+    .hash(password, SaltRounds)
+    .then((pass) => {
+      req.user = { username: username, password: pass };
+      next();
+    })
+    .catch((err) => {
+      throw new Error(err);
+    })
 };
 
 const compareUserPW = (req, res, next) => {
   const { username, password } = req.body;
-  // https://github.com/kelektiv/node.bcrypt.js#usage
-  // TODO: Fill this middleware in with the Proper password comparing, bcrypt.compare()
-  // You'll need to find the user in your DB
-  // Once you have the user, you'll need to pass the encrypted pw and the plaintext pw to the compare function
-  // If the passwords match set the username on `req` ==> req.username = user.username; and call next();
+  if (!username) {
+    throw new Error('No username passed to compareUserPW middleware');
+    return;
+  }
+  User.findOne ({ username }, (err, user) => {
+    if (err || user === null) {
+      throw new Error('No found user in compareUserPW middleware');
+      return;
+    }
+    const hashedPass = user.password;
+    bcrypt
+      .compare(password, hashedPass)
+      .then((response) => {
+        if (!response) throw new Error('No response in compareUserPW middleware');
+        req.username = user.username;
+        next();
+      })
+      .catch((error) => {
+        throw new Error();
+        return;
+      })
+  })
 };
 
 module.exports = {
